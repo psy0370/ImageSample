@@ -179,7 +179,7 @@ namespace ImageSample.Utils.Dto
                         break;
 
                     case ExtensionIntroducer:
-                        offset += GetGraphicControlExtension(imageData, offset);
+                        offset += GetExtension(imageData, offset);
                         break;
 
                     default:
@@ -225,17 +225,13 @@ namespace ImageSample.Utils.Dto
         }
 
         /// <summary>
-        /// 画像データのExtensionを判別して、以下の処理を実施します。<br/>
-        /// 　・Graphic Control Extension：取得<br/>
-        /// 　・Comment Extension：除外<br/>
-        /// 　・Plain Text Extension：除外<br/>
-        /// 　・Application Extension：除外<br/>
+        /// 画像データからExtensionを取得します。<br/>
         /// </summary>
         /// <param name="imageData">画像データ</param>
         /// <param name="offset">Extensionのオフセット値</param>
         /// <returns>Extensionのバイト数</returns>
         /// <exception cref="Exception">認識できないExtensionだった場合</exception>
-        private int GetGraphicControlExtension(byte[] imageData, int offset)
+        private int GetExtension(byte[] imageData, int offset)
         {
             switch (imageData[offset + ExtensionLabelOffset])
             {
