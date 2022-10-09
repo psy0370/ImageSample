@@ -11,7 +11,6 @@ namespace ImageSample.Utils.Dto
         private readonly static byte[] Version87a = { 0x47, 0x49, 0x46, 0x38, 0x37, 0x61 };
         /// <summary>バージョン 89a</summary>
         private readonly static byte[] Version89a = { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 };
-
         /// <summary>Image Separator</summary>
         private const byte ImageSeparator = 0x2c;
         /// <summary>Extension Introducer</summary>
@@ -20,7 +19,6 @@ namespace ImageSample.Utils.Dto
         private const byte BlockTerminator = 0x00;
         /// <summary>Gif Trailer</summary>
         private const byte GifTrailer = 0x3b;
-
         /// <summary>Graphic Control Label</summary>
         private const byte GraphicControlLabel = 0xf9;
         /// <summary>Comment Label</summary>
@@ -29,7 +27,6 @@ namespace ImageSample.Utils.Dto
         private const byte PlainTextLabel = 0x01;
         /// <summary>Extension Label</summary>
         private const byte ExtensionLabel = 0xff;
-
         /// <summary>HeaderのPacked Filedのオフセット値</summary>
         private const int HeaderPackedFieldOffset = 10;
         /// <summary>Image BlockのPacked Filedのオフセット値</summary>
@@ -46,7 +43,6 @@ namespace ImageSample.Utils.Dto
         private const byte ColorTableFlag = 0x80;
         /// <summary>Size of Color Tableのビットマスク</summary>
         private const byte SizeOfColorTable = 0x07;
-
         /// <summary>Headerの基本バイト数</summary>
         private const int HeaderBaseSize = 13;
         /// <summary>Image Blockの基本バイト数</summary>

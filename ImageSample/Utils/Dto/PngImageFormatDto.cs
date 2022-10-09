@@ -9,13 +9,10 @@ namespace ImageSample.Utils.Dto
     {
         /// <summary>シグネチャ</summary>
         private readonly static byte[] Signature = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
-
         /// <summary>IEND Image trailer</summary>
         private readonly static byte[] ImageTrailerChunkType = { 0x49, 0x45, 0x4e, 0x44 };
-
         /// <summary>削除するチャンクタイプ</summary>
         private readonly static byte[][] IgnoreChunkTypes = new byte[][] { new byte[] { 0x74, 0x45, 0x58, 0x74 }, new byte[] { 0x7a, 0x54, 0x58, 0x74 }, new byte[] { 0x69, 0x54, 0x58, 0x74 } };
-
         /// <summary>チャンク長さのバイト数</summary>
         private const int ChunkLengthSize = 4;
         /// <summary>チャンクタイプの長さ</summary>

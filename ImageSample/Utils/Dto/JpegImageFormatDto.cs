@@ -11,7 +11,6 @@ namespace ImageSample.Utils.Dto
         private readonly static byte[] SoiSegment = { 0xff, 0xd8 };
         /// <summary>SOS(Start Of Scan)</summary>
         private const byte SosMarkerName = 0xda;
-
         /// <summary>マーカー識別子</summary>
         private const byte MarkerId = 0xff;
         /// <summary>データを持たないセグメントのマーカー名</summary>
@@ -20,7 +19,6 @@ namespace ImageSample.Utils.Dto
         private readonly static byte[] IgnoreSegmentMarkerNames = { 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xef, 0xfe };
         /// <summary>スキャンデータとして扱うマーカー名</summary>
         private readonly static byte[] SkipScanMarkerName = { 0x00, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7 };
-
         /// <summary>マーカー名のオフセット値</summary>
         private const int MarkerNameOffset = 1;
         /// <summary>セグメント長のオフセット値</summary>
