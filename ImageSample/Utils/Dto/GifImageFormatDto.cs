@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace ImageSample.Utils.Dto
 {
     /// <summary>
     /// GIF画像処理用のDtoクラス
     /// </summary>
-    public class GifImageFormatDto : IImageFormatDto
+    public class GifImageFormatDto : ImageFormatDto
     {
         /// <summary>シグネチャ</summary>
         private readonly static byte[] Signature = { 0x47, 0x49, 0x46 };
@@ -66,17 +64,6 @@ namespace ImageSample.Utils.Dto
         /// <summary>1色当たりのバイト数</summary>
         private const int ColorSize = 3;
 
-        /// <summary>処理済み画像データ</summary>
-        public byte[] ImageData
-        {
-            get
-            {
-                return _imageData.ToArray();
-            }
-        }
-
-        private List<byte> _imageData = new List<byte>();
-
         /// <summary>
         /// 先頭データが以下の通り一致するかチェックします。<br/>
         /// 　0000h: 47 49 46<br/>
@@ -87,11 +74,9 @@ namespace ImageSample.Utils.Dto
         /// true：画像データをGIFとして認識できる場合
         /// false：画像データをGIFとして認識できない場合
         /// </returns>
-        public bool CheckImageData(byte[] imageData)
+        public override bool CheckImageData(byte[] imageData)
         {
-            return Signature.SequenceEqual(imageData.Take(Signature.Length)) &&
-                (Version87a.SequenceEqual(imageData.Skip(Signature.Length).Take(Version87a.Length)) ||
-                Version89a.SequenceEqual(imageData.Skip(Signature.Length).Take(Version89a.Length)));
+            return CompareArray(Signature, imageData, 0) && (CompareArray(Version87a, imageData, Signature.Length) || CompareArray(Version89a, imageData, Signature.Length));
         }
 
         /// <summary>
@@ -105,9 +90,9 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public bool CreateImageDataNoMetaInfo(byte[] imageData)
+        public override bool CreateImageDataNoMetaInfo(byte[] imageData)
         {
-            _imageData.Clear();
+            imageData_ = new byte[imageData.Length];
 
             try
             {
@@ -151,7 +136,7 @@ namespace ImageSample.Utils.Dto
             var colorTableSize = GetColorTableSize(packedField);
             headerSize += HeaderBaseSize + colorTableSize;
 
-            _imageData.AddRange(imageData.Take(headerSize).ToArray());
+            Buffer.BlockCopy(imageData, 0, imageData_, 0, headerSize);
 
             return headerSize;
         }
@@ -164,30 +149,31 @@ namespace ImageSample.Utils.Dto
         /// <returns>処理結果</returns>
         private bool GetBlocks(byte[] imageData, int offset)
         {
-            while (offset < imageData.Length)
+            var srcOffset = offset;
+            var dstOffset = offset;
+            while (srcOffset < imageData.Length)
             {
-                var blockId = imageData[offset];
-                if (blockId == GifTrailer)
+                var blockId = imageData[srcOffset];
+                if (blockId == ImageSeparator)
+                {
+                    GetImageBlock(imageData, ref srcOffset, ref dstOffset);
+                }
+                else if (blockId == ExtensionIntroducer)
+                {
+                    GetExtension(imageData, ref srcOffset, ref dstOffset);
+                }
+                else if (blockId == GifTrailer)
+                {
+                    imageData_[dstOffset++] = GifTrailer;
+                    break;
+                }
+                else
                 {
                     break;
                 }
-
-                switch (blockId)
-                {
-                    case ImageSeparator:
-                        offset += GetImageBlock(imageData, offset);
-                        break;
-
-                    case ExtensionIntroducer:
-                        offset += GetExtension(imageData, offset);
-                        break;
-
-                    default:
-                        return false;
-                }
             }
 
-            _imageData.Add(GifTrailer);
+            Array.Resize(ref imageData_, dstOffset);
 
             return true;
         }
@@ -196,16 +182,17 @@ namespace ImageSample.Utils.Dto
         /// 画像データからImage Blockを取得します。
         /// </summary>
         /// <param name="imageData">画像データ</param>
-        /// <param name="offset">Image Blockのオフセット値</param>
+        /// <param name="srcOffset">Image Blockのオフセット値</param>
+        /// <param name="dstOffset">出力先のオフセット値</param>
         /// <returns>Image Blockのバイト数</returns>
-        private int GetImageBlock(byte[] imageData, int offset)
+        private void GetImageBlock(byte[] imageData, ref int srcOffset, ref int dstOffset)
         {
             var imageBlockSize = 0;
-            var packedField = imageData[offset + ImageBlockPackedFieldOffset];
+            var packedField = imageData[srcOffset + ImageBlockPackedFieldOffset];
             var colorTableSize = GetColorTableSize(packedField);
             imageBlockSize += ImageBlockBaseSize + colorTableSize;
 
-            var blockOffset = offset + imageBlockSize;
+            var blockOffset = srcOffset + imageBlockSize;
             while (blockOffset < imageData.Length)
             {
                 var blockSize = imageData[blockOffset];
@@ -219,34 +206,40 @@ namespace ImageSample.Utils.Dto
                 blockOffset += blockSize + 1;
             }
 
-            _imageData.AddRange(imageData.Skip(offset).Take(imageBlockSize));
-
-            return imageBlockSize;
+            Buffer.BlockCopy(imageData, srcOffset, imageData_, dstOffset, imageBlockSize);
+            srcOffset += imageBlockSize;
+            dstOffset += imageBlockSize;
         }
 
         /// <summary>
         /// 画像データからExtensionを取得します。<br/>
         /// </summary>
         /// <param name="imageData">画像データ</param>
-        /// <param name="offset">Extensionのオフセット値</param>
+        /// <param name="srcOffset">Extensionのオフセット値</param>
+        /// <param name="dstOffset">出力先のオフセット値</param>
         /// <returns>Extensionのバイト数</returns>
         /// <exception cref="Exception">認識できないExtensionだった場合</exception>
-        private int GetExtension(byte[] imageData, int offset)
+        private void GetExtension(byte[] imageData, ref int srcOffset, ref int dstOffset)
         {
-            switch (imageData[offset + ExtensionLabelOffset])
+            switch (imageData[srcOffset + ExtensionLabelOffset])
             {
                 case GraphicControlLabel:
-                    _imageData.AddRange(imageData.Skip(offset).Take(GraphicControlBaseSize));
-                    return GraphicControlBaseSize;
+                    Buffer.BlockCopy(imageData, srcOffset, imageData_, dstOffset, GraphicControlBaseSize);
+                    srcOffset += GraphicControlBaseSize;
+                    dstOffset += GraphicControlBaseSize;
+                    break;
 
                 case CommentLabel:
-                    return CommentBaseSize + imageData[offset + CommentBlockSizeOffset];
+                    srcOffset += CommentBaseSize + imageData[srcOffset + CommentBlockSizeOffset];
+                    break;
 
                 case PlainTextLabel:
-                    return PlainTextBaseSize + imageData[offset + PlainTextBlockSizeOffset];
+                    srcOffset += PlainTextBaseSize + imageData[srcOffset + PlainTextBlockSizeOffset];
+                    break;
 
                 case ExtensionLabel:
-                    return ExtensionBaseSize + imageData[offset + ExtensionBlockSizeOffset];
+                    srcOffset += ExtensionBaseSize + imageData[srcOffset + ExtensionBlockSizeOffset];
+                    break;
 
                 default:
                     throw new Exception();

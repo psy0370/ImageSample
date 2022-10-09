@@ -16,7 +16,7 @@ namespace ImageSample.Utils.Services
             stream.Read(imageData, 0, imageData.Length);
 
             // 拡張子チェック
-            Dto.IImageFormatDto dto;
+            Dto.ImageFormatDto dto;
             var extension = Path.GetExtension(filename).ToLower();
             switch (extension)
             {

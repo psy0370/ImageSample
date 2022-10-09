@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace ImageSample.Utils.Dto
 {
     /// <summary>
     /// Jpeg画像処理用のDtoクラス
     /// </summary>
-    public class JpegImageFormatDto : IImageFormatDto
+    public class JpegImageFormatDto : ImageFormatDto
     {
         /// <summary>SOI(Start of Image)</summary>
         private readonly static byte[] SoiSegment = { 0xff, 0xd8 };
@@ -28,19 +25,10 @@ namespace ImageSample.Utils.Dto
         private const int MarkerNameOffset = 1;
         /// <summary>セグメント長のオフセット値</summary>
         private const int SegmentLengthOffset = 2;
+        /// <summary>セグメント長のバイト数</summary>
+        private const int SegmentLengthSize = 2;
         /// <summary>マーカーのバイト数</summary>
         private const int MarkerSize = 2;
-
-        /// <summary>処理済み画像データ</summary>
-        public byte[] ImageData
-        {
-            get
-            {
-                return _imageData.ToArray();
-            }
-        }
-
-        private List<byte> _imageData = new List<byte>();
 
         /// <summary>
         /// 先頭データが以下の通り一致するかチェックします。<br/>
@@ -51,9 +39,9 @@ namespace ImageSample.Utils.Dto
         /// true：画像データをJpegとして認識できる場合
         /// false：画像データをJpegとして認識できない場合
         /// </returns>
-        public bool CheckImageData(byte[] imageData)
+        public override bool CheckImageData(byte[] imageData)
         {
-            return SoiSegment.SequenceEqual(imageData.Take(SoiSegment.Length));
+            return CompareArray(SoiSegment, imageData, 0);
         }
 
         /// <summary>
@@ -66,10 +54,10 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public bool CreateImageDataNoMetaInfo(byte[] imageData)
+        public override bool CreateImageDataNoMetaInfo(byte[] imageData)
         {
-            _imageData.Clear();
-            _imageData.AddRange(SoiSegment);
+            imageData_ = new byte[imageData.Length];
+            Buffer.BlockCopy(SoiSegment, 0, imageData_, 0, SoiSegment.Length);
 
             try
             {
@@ -99,7 +87,7 @@ namespace ImageSample.Utils.Dto
 
                 if (isMarker)
                 {
-                    if (!SkipScanMarkerName.Contains(data))
+                    if (Array.BinarySearch(SkipScanMarkerName, data) < 0)
                     {
                         break;
                     }
@@ -127,36 +115,40 @@ namespace ImageSample.Utils.Dto
         /// <returns>処理結果</returns>
         private bool GetSegments(byte[] imageData)
         {
-            var offset = SoiSegment.Length;
-            while (offset < imageData.Length)
+            var srcOffset = SoiSegment.Length;
+            var dstOffset = SoiSegment.Length;
+            while (srcOffset < imageData.Length)
             {
-                if (imageData[offset] != MarkerId)
+                if (imageData[srcOffset] != MarkerId)
                 {
-                    return true;
+                    break;
                 }
 
                 var segmentSize = MarkerSize;
-                var markerName = imageData[offset + MarkerNameOffset];
-                if (!NoDataSegmentMarkerNames.Contains(markerName))
+                var markerName = imageData[srcOffset + MarkerNameOffset];
+                if (Array.BinarySearch(NoDataSegmentMarkerNames, markerName) < 0)
                 {
-                    var segmentLength = BitConverter.ToUInt16(imageData.Skip(offset + SegmentLengthOffset).Take(Marshal.SizeOf(typeof(ushort))).Reverse().ToArray(), 0);
+                    var segmentLength = BitConverter.ToUInt16(GetSlicedReverseArray(imageData, srcOffset + SegmentLengthOffset, SegmentLengthSize), 0);
                     segmentSize += segmentLength;
                 }
 
                 if (markerName == SosMarkerName)
                 {
-                    segmentSize += GetScanDataSize(imageData, offset + segmentSize);
+                    segmentSize += GetScanDataSize(imageData, srcOffset + segmentSize);
                 }
 
-                if (!IgnoreSegmentMarkerNames.Contains(markerName))
+                if (Array.BinarySearch(IgnoreSegmentMarkerNames, markerName) < 0)
                 {
-                    _imageData.AddRange(imageData.Skip(offset).Take(segmentSize));
+                    Buffer.BlockCopy(imageData, srcOffset, imageData_, dstOffset, segmentSize);
+                    dstOffset += segmentSize;
                 }
 
-                offset += segmentSize;
+                srcOffset += segmentSize;
             }
 
-            return false;
+            Array.Resize(ref imageData_, dstOffset);
+
+            return true;
         }
 
         #endregion

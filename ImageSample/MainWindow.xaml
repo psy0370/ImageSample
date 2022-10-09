@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ImageSample"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" AllowDrop="True"
+        Title="MainWindow" SizeToContent="WidthAndHeight" ResizeMode="NoResize" AllowDrop="True"
         DragOver="Window_DragOver" Drop="Window_Drop">
-    <Grid>
+    <StackPanel>
         <TextBlock x:Name="Info"/>
-        <Image x:Name="ProcessedImage"/>
-    </Grid>
+        <Image x:Name="ProcessedImage" Width="400" Height="400"/>
+    </StackPanel>
 </Window>

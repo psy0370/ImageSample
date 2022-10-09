@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.IO;
+using System.Diagnostics;
 
 namespace ImageSample
 {
@@ -55,10 +56,24 @@ namespace ImageSample
 
                 using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read))
                 {
-                    if (Utils.Services.ImageValidationService.ValidationImage(stream, fullpath))
+                    var sw = new Stopwatch();
+                    sw.Start();
+                    var result = Utils.Services.ImageValidationService.ValidationImage(stream, fullpath);
+                    sw.Stop();
+
+                    if (result)
                     {
-                        Info.Text = "";
-                        ProcessedImage.Source = new BitmapImage(new Uri(fullpath));
+                        var ts = sw.Elapsed;
+                        Info.Text = $"処理時間：{ts.Hours}:{ts.Minutes}:{ts.Seconds}:{ts.Milliseconds}";
+
+                        using (var imageStream = new FileStream(fullpath, FileMode.Open, FileAccess.Read))
+                        {
+                            var wBmp = new WriteableBitmap(BitmapFrame.Create(imageStream));
+                            wBmp.Freeze();
+                            stream.Close();
+
+                            ProcessedImage.Source = wBmp;
+                        }
                     }
                     else
                     {

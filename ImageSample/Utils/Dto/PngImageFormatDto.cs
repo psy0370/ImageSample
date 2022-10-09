@@ -1,38 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImageSample.Utils.Dto
 {
-    internal class PngImageFormatDto : IImageFormatDto
+    /// <summary>
+    /// PNG画像処理用のDtoクラス
+    /// </summary>
+    public class PngImageFormatDto : ImageFormatDto
     {
         /// <summary>シグネチャ</summary>
         private readonly static byte[] Signature = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
 
         /// <summary>IEND Image trailer</summary>
-        private const string ImageTrailerChunkType = "IEND";
+        private readonly static byte[] ImageTrailerChunkType = { 0x49, 0x45, 0x4e, 0x44 };
 
         /// <summary>削除するチャンクタイプ</summary>
-        private readonly static string[] IgnoreChunkTypes = { "tEXt", "zTXt", "iTXt" };
+        private readonly static byte[][] IgnoreChunkTypes = new byte[][] { new byte[] { 0x74, 0x45, 0x58, 0x74 }, new byte[] { 0x7a, 0x54, 0x58, 0x74 }, new byte[] { 0x69, 0x54, 0x58, 0x74 } };
 
+        /// <summary>チャンク長さのバイト数</summary>
+        private const int ChunkLengthSize = 4;
         /// <summary>チャンクタイプの長さ</summary>
-        private const int ChunkTypeLength = 4;
+        private const int ChunkLengthOffset = 4;
         /// <summary>チャンクの基本バイト数</summary>
         private const int ChunkBaseSize = 12;
-
-        /// <summary>処理済み画像データ</summary>
-        public byte[] ImageData
-        {
-            get
-            {
-                return _imageData.ToArray();
-            }
-        }
-
-        private List<byte> _imageData = new List<byte>();
 
         /// <summary>
         /// 先頭データが以下の通り一致するかチェックします。<br/>
@@ -43,9 +32,9 @@ namespace ImageSample.Utils.Dto
         /// true：画像データをPNGとして認識できる場合
         /// false：画像データをPNGとして認識できない場合
         /// </returns>
-        public bool CheckImageData(byte[] imageData)
+        public override bool CheckImageData(byte[] imageData)
         {
-            return Signature.SequenceEqual(imageData.Take(Signature.Length));
+            return CompareArray(Signature, imageData, 0);
         }
 
         /// <summary>
@@ -59,10 +48,10 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public bool CreateImageDataNoMetaInfo(byte[] imageData)
+        public override bool CreateImageDataNoMetaInfo(byte[] imageData)
         {
-            _imageData.Clear();
-            _imageData.AddRange(Signature);
+            imageData_ = new byte[imageData.Length];
+            Buffer.BlockCopy(Signature, 0, imageData_, 0, Signature.Length);
 
             try
             {
@@ -77,32 +66,65 @@ namespace ImageSample.Utils.Dto
         #region Private Method
 
         /// <summary>
+        /// 削除するチャンクタイプかチェックします。
+        /// </summary>
+        /// <param name="imageData">画像データ</param>
+        /// <param name="offset">チャンクのオフセット値</param>
+        /// <returns>結果</returns>
+        private bool CheckIgnoreChunkType(byte[] imageData, int offset)
+        {
+            foreach (var ignoreChunkType in IgnoreChunkTypes)
+            {
+                if (CompareArray(ignoreChunkType, imageData, offset + ChunkLengthOffset))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// IEND Image trailerかチェックします。
+        /// </summary>
+        /// <param name="imageData">画像データ</param>
+        /// <param name="offset">チャンクのオフセット値</param>
+        /// <returns>結果</returns>
+        private bool CheckImageTrailerChunkType(byte[] imageData, int offset)
+        {
+            return CompareArray(ImageTrailerChunkType, imageData, offset + ChunkLengthOffset);
+        }
+
+        /// <summary>
         /// 画像データからチャンクを取得します。
         /// </summary>
         /// <param name="imageData">画像データ</param>
         /// <returns>処理結果</returns>
         private bool GetChunks(byte[] imageData)
         {
-            var offset = Signature.Length;
-            while (offset < imageData.Length)
+            var srcOffset = Signature.Length;
+            var dstOffset = Signature.Length;
+            while (srcOffset < imageData.Length)
             {
-                var chunkLength = BitConverter.ToInt32(imageData.Skip(offset).Take(Marshal.SizeOf(typeof(int))).Reverse().ToArray(), 0);
-                var chunkType = Encoding.ASCII.GetString(imageData.Skip(offset + Marshal.SizeOf(typeof(int))).Take(ChunkTypeLength).ToArray());
+                var chunkLength = BitConverter.ToInt32(GetSlicedReverseArray(imageData, srcOffset, ChunkLengthSize), 0);
                 var chunkSize = ChunkBaseSize + chunkLength;
-                if (!IgnoreChunkTypes.Contains(chunkType))
+                if (!CheckIgnoreChunkType(imageData, srcOffset))
                 {
-                    _imageData.AddRange(imageData.Skip(offset).Take(chunkSize));
+                    Buffer.BlockCopy(imageData, srcOffset, imageData_, dstOffset, chunkSize);
+                    dstOffset += chunkSize;
                 }
 
-                if (chunkType == ImageTrailerChunkType)
+                if (CheckImageTrailerChunkType(imageData, srcOffset))
                 {
-                    return true;
+                    break;
                 }
 
-                offset += chunkSize;
+                srcOffset += chunkSize;
             }
 
-            return false;
+            Array.Resize(ref imageData_, dstOffset);
+
+            return true;
         }
 
         #endregion

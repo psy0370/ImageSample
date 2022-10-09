@@ -55,7 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Utils\Dto\IImageFormatDto.cs" />
+    <Compile Include="Utils\Dto\ImageFormatDto.cs" />
     <Compile Include="Utils\Dto\GifImageFormatDto.cs" />
     <Compile Include="Utils\Dto\JpegImageFormatDto.cs" />
     <Compile Include="Utils\Dto\PngImageFormatDto.cs" />
