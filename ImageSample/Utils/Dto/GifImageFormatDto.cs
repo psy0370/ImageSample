@@ -7,12 +7,10 @@ namespace ImageSample.Utils.Dto
     /// </summary>
     public class GifImageFormatDto : ImageFormatDto
     {
-        /// <summary>シグネチャ</summary>
-        private readonly static byte[] Signature = { 0x47, 0x49, 0x46 };
         /// <summary>バージョン 87a</summary>
-        private readonly static byte[] Version87a = { 0x38, 0x37, 0x61 };
+        private readonly static byte[] Version87a = { 0x47, 0x49, 0x46, 0x38, 0x37, 0x61 };
         /// <summary>バージョン 89a</summary>
-        private readonly static byte[] Version89a = { 0x38, 0x39, 0x61 };
+        private readonly static byte[] Version89a = { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 };
 
         /// <summary>Image Separator</summary>
         private const byte ImageSeparator = 0x2c;
@@ -64,20 +62,8 @@ namespace ImageSample.Utils.Dto
         /// <summary>1色当たりのバイト数</summary>
         private const int ColorSize = 3;
 
-        /// <summary>
-        /// 先頭データが以下の通り一致するかチェックします。<br/>
-        /// 　0000h: 47 49 46<br/>
-        /// 　0003h: 38 37 61 or 38 39 61<br/>
-        /// </summary>
-        /// <param name="imageData"></param>
-        /// <returns>
-        /// true：画像データをGIFとして認識できる場合
-        /// false：画像データをGIFとして認識できない場合
-        /// </returns>
-        public override bool CheckImageData(byte[] imageData)
-        {
-            return CompareArray(Signature, imageData, 0) && (CompareArray(Version87a, imageData, Signature.Length) || CompareArray(Version89a, imageData, Signature.Length));
-        }
+        /// <summary>マジックナンバー</summary>
+        public override byte[][] MagickNumbers => new byte[][] { Version87a, Version89a };
 
         /// <summary>
         /// 画像データをGIFとして解析し、以下のブロックを削除した新たな画像データを生成します。<br/>
@@ -90,7 +76,7 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public override bool CreateImageDataNoMetaInfo(byte[] imageData)
+        public override bool CreateImageNoMetaInfo(byte[] imageData)
         {
             imageData_ = new byte[imageData.Length];
 

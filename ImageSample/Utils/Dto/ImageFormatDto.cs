@@ -7,6 +7,8 @@ namespace ImageSample.Utils.Dto
     /// </summary>
     public abstract class ImageFormatDto
     {
+        /// <summary>マジックナンバー</summary>
+        public abstract byte[][] MagickNumbers { get; }
         /// <summary>処理済み画像データ</summary>
         public byte[] ImageData
         {
@@ -23,14 +25,25 @@ namespace ImageSample.Utils.Dto
         protected byte[] imageData_ = null;
 
         /// <summary>
-        /// 画像データを認識できるかチェックします。
+        /// 画像データのマジックナンバーをチェックします。
         /// </summary>
         /// <param name="imageData">画像データ</param>
         /// <returns>
-        /// true：画像データを認識できる場合
-        /// false：画像データを認識できない場合
+        /// true：マジックナンバーが一致する場合
+        /// false：マジックナンバーが一致しない場合
         /// </returns>
-        public abstract bool CheckImageData(byte[] imageData);
+        public bool CheckMagicNumber(byte[] imageData)
+        {
+            foreach (var magicNumber in MagickNumbers)
+            {
+                if (CompareArray(magicNumber, imageData, 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// 画像データを解析し、Exif情報やメタデータなどを削除した新たな画像データを生成します。
@@ -40,7 +53,7 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public abstract bool CreateImageDataNoMetaInfo(byte[] imageData);
+        public abstract bool CreateImageNoMetaInfo(byte[] imageData);
 
         #region Protected Method
 

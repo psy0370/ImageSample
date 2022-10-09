@@ -23,19 +23,8 @@ namespace ImageSample.Utils.Dto
         /// <summary>チャンクの基本バイト数</summary>
         private const int ChunkBaseSize = 12;
 
-        /// <summary>
-        /// 先頭データが以下の通り一致するかチェックします。<br/>
-        /// 　0000h: 89 50 4E 47 0D 0A 1A 0A<br/>
-        /// </summary>
-        /// <param name="imageData">画像データ</param>
-        /// <returns>
-        /// true：画像データをPNGとして認識できる場合
-        /// false：画像データをPNGとして認識できない場合
-        /// </returns>
-        public override bool CheckImageData(byte[] imageData)
-        {
-            return CompareArray(Signature, imageData, 0);
-        }
+        /// <summary>マジックナンバー</summary>
+        public override byte[][] MagickNumbers => new byte[][] { Signature };
 
         /// <summary>
         /// 画像データをPNGとして解析し、以下のチャンクを削除した新たな画像データを生成します。<br/>
@@ -48,7 +37,7 @@ namespace ImageSample.Utils.Dto
         /// true：画像データを生成できた場合<br/>
         /// false：解析エラーが発生した場合<br/>
         /// </returns>
-        public override bool CreateImageDataNoMetaInfo(byte[] imageData)
+        public override bool CreateImageNoMetaInfo(byte[] imageData)
         {
             imageData_ = new byte[imageData.Length];
             Buffer.BlockCopy(Signature, 0, imageData_, 0, Signature.Length);
