@@ -10,19 +10,19 @@ namespace ImageSample.Utils.Dto
         /// <summary>マジックナンバー</summary>
         public abstract byte[][] MagickNumbers { get; }
         /// <summary>処理済み画像データ</summary>
-        public byte[] ImageData
-        {
-            get
-            {
-                return imageData_;
-            }
-            private set
-            {
-                imageData_ = value;
-            }
-        }
+        public byte[] ImageData => imageData_;
 
         protected byte[] imageData_ = null;
+
+        /// <summary>
+        /// 画像データを解析し、Exif情報やメタデータなどを削除した新たな画像データを生成します。
+        /// </summary>
+        /// <param name="imageData">画像データ</param>
+        /// <returns>
+        /// true：画像データを生成できた場合<br/>
+        /// false：解析エラーが発生した場合<br/>
+        /// </returns>
+        public abstract bool CreateImageNoMetaInfo(byte[] imageData);
 
         /// <summary>
         /// 画像データのマジックナンバーをチェックします。
@@ -44,16 +44,6 @@ namespace ImageSample.Utils.Dto
 
             return false;
         }
-
-        /// <summary>
-        /// 画像データを解析し、Exif情報やメタデータなどを削除した新たな画像データを生成します。
-        /// </summary>
-        /// <param name="imageData">画像データ</param>
-        /// <returns>
-        /// true：画像データを生成できた場合<br/>
-        /// false：解析エラーが発生した場合<br/>
-        /// </returns>
-        public abstract bool CreateImageNoMetaInfo(byte[] imageData);
 
         #region Protected Method
 
