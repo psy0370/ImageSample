@@ -37,14 +37,8 @@ namespace ImageSample.Utils.Services
                     return false;
             }
 
-            // 拡張子偽造チェック
-            if (!dto.CheckImageData(imageData))
-            {
-                return false;
-            }
-
-            // 解析・Exif情報・メタデータ削除
-            if (!dto.CreateImageDataNoMetaInfo(imageData))
+            // 拡張子偽造チェック・バイナリ解析・Exif情報/メタデータ削除
+            if (!dto.CheckImageData(imageData) || !dto.CreateImageDataNoMetaInfo(imageData))
             {
                 return false;
             }

@@ -157,7 +157,7 @@ namespace ImageSample.Utils.Dto
         }
 
         /// <summary>
-        /// 画像データから各種ブロックを取得します。
+        /// 画像データからブロックを取得します。
         /// </summary>
         /// <param name="imageData">画像データ</param>
         /// <param name="offset">ブロックのオフセット値</param>

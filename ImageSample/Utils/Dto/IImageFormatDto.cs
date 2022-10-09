@@ -1,5 +1,8 @@
 ﻿namespace ImageSample.Utils.Dto
 {
+    /// <summary>
+    /// 画像データを扱うDtoインターフェース
+    /// </summary>
     public interface IImageFormatDto
     {
         /// <summary>処理済み画像データ</summary>

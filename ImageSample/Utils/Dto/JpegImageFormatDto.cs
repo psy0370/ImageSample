@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace ImageSample.Utils.Dto
 {
@@ -68,6 +69,7 @@ namespace ImageSample.Utils.Dto
         public bool CreateImageDataNoMetaInfo(byte[] imageData)
         {
             _imageData.Clear();
+            _imageData.AddRange(SoiSegment);
 
             try
             {
@@ -119,25 +121,25 @@ namespace ImageSample.Utils.Dto
         }
 
         /// <summary>
-        /// 画像データから各種セグメントを取得します。
+        /// 画像データからセグメントを取得します。
         /// </summary>
         /// <param name="imageData">画像データ</param>
         /// <returns>処理結果</returns>
         private bool GetSegments(byte[] imageData)
         {
-            var offset = 0;
+            var offset = SoiSegment.Length;
             while (offset < imageData.Length)
             {
                 if (imageData[offset] != MarkerId)
                 {
-                    break;
+                    return true;
                 }
 
                 var segmentSize = MarkerSize;
                 var markerName = imageData[offset + MarkerNameOffset];
                 if (!NoDataSegmentMarkerNames.Contains(markerName))
                 {
-                    var segmentLength = BitConverter.ToInt16(imageData.Skip(offset + SegmentLengthOffset).Take(2).Reverse().ToArray(), 0);
+                    var segmentLength = BitConverter.ToUInt16(imageData.Skip(offset + SegmentLengthOffset).Take(Marshal.SizeOf(typeof(ushort))).Reverse().ToArray(), 0);
                     segmentSize += segmentLength;
                 }
 
@@ -154,7 +156,7 @@ namespace ImageSample.Utils.Dto
                 offset += segmentSize;
             }
 
-            return true;
+            return false;
         }
 
         #endregion
