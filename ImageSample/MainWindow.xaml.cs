@@ -70,7 +70,7 @@ namespace ImageSample
                         {
                             var wBmp = new WriteableBitmap(BitmapFrame.Create(imageStream));
                             wBmp.Freeze();
-                            stream.Close();
+                            imageStream.Close();
 
                             ProcessedImage.Source = wBmp;
                         }
